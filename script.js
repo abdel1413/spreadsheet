@@ -1,5 +1,6 @@
 window.onload = () => {
   const container = document.getElementById("container");
+
   const createLabel = (name) => {
     const label = document.createElement("div");
     label.className = "label";
@@ -11,7 +12,7 @@ window.onload = () => {
   // reference as call back
   const letters = charRange("A", "J");
   letters.forEach(createLabel);
-
+  console.log(letters);
   // generate numbers by calling range() and pass
   // 1 and 99 as param
   // inside the forEach(), make two function calls:
@@ -26,9 +27,55 @@ window.onload = () => {
       input.type = "text";
       input.id = letter + number;
       input.ariaLabel = letter + number;
+      //call update when the value changes using onchange()
+      input.onchange = update;
       container.appendChild(input);
     });
   });
+};
+
+const isEven = (num) => num % 2 === 0;
+
+const sum = (nums) => nums.reduce((acc, el) => acc + el, 0);
+
+const average = (nums) => sum(nums) / nums.length;
+
+//find the median of the array
+//1) make a shallow copy of the original array
+// 2) sort it
+// 3) find the length;
+//4) find the middle
+// 5) check if it is length is even
+// a)return average of first middle index (length /2)
+//and 2nd middle index (lenghth/2)-1
+// b) otherwise return the middle
+const median = (nums) => {
+  const sorted = nums.slice().sort((a, b) => a - b);
+  const length = sorted.length;
+  const middle = length / 2 - 1;
+  return isEven(length)
+    ? average([sorted[middle], sorted[middle + 1]])
+    : sorted[Math.ceil(middle)];
+};
+
+//create an object to keep track of all the the functions
+const spreasheetFunctions = {
+  sum,
+  average,
+  median,
+};
+
+// need tell the window.onload function
+// to update elt if there is any
+// event is a change event
+const update = (event) => {
+  const element = event.target();
+  const value = element.value.replace(/\s/g, "");
+  //if the first char of cell is '=' ie calculation
+  //should be used and spreadsheet function
+  //should eveluated
+  if (!value.includes(element.id) && value[0] === "=") {
+  }
 };
 
 //1 use Array constructor to calculate the size
@@ -55,5 +102,7 @@ const charRange = (start, end) =>
   range(start.charCodeAt(0), end.charCodeAt(0)).map((code) =>
     String.fromCharCode(code)
   );
-console.log(range(1, 9));
-console.log(charRange("A", "J"));
+
+// to run spreadsheet functions, we need to
+//parse and evaluate the input string
+const evalFormula = (x, cells) => {};
