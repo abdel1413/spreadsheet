@@ -1,3 +1,5 @@
+const { CommandSucceededEvent } = require("mongodb");
+
 window.onload = () => {
   const container = document.getElementById("container");
 
@@ -32,6 +34,63 @@ window.onload = () => {
       container.appendChild(input);
     });
   });
+};
+
+//an infix is an operator that appears btw two opperands
+const infixToFunction = {
+  "+": (x, y) => x + y,
+  "-": (x, y) => x - y,
+  "*": (x, y) => x * y,
+  "/": (x, y) => x / y,
+};
+//access infixTofunction property and call
+// the associated function to evaluate the calculation
+//infixToFunction['+']("1", "2")
+const infixEval = (str, regex) =>
+  str.replace(regex, (_match, arg2, operator, arg2) =>
+    infixToFunction[operator](parseFloat(arg1), parseFloat(arg2))
+  );
+
+//highPrecedence is a func to evaluate an operation
+//in string following the high precedenc rule
+//1 : funct with str as param
+// 2: inside the funct, create a regex matching digid
+// operator (* or /) followed by another digit
+// 3 :  call infixEval (str, and regex) and save it in var
+//4:  if regex matches the str return str ortherwise
+// recursively call the function and var you saved
+
+// NOTE WE USE RECURSIVE CALL AS THE TEXT JUST
+//RETURN THE FIRST MATCH SO WE NEED TO CALL FUNCTION
+//AGAIN TO CHECK FOR POSSIBEL OPERATORS
+const highPrecedence = (str) => {
+  const regex = /([\d.])+([*\/])([\d.])+/;
+  const str2 = infixEval(str, regex);
+  return str2 === str ? str : highPrecedence(str2);
+};
+
+const applyFunction = (str) => {
+  const noHigh = highPrecedence(str);
+  const infix = /([\d.]+)([+-])([\d.]+)/;
+  const str2 = infixEval(noHigh, infix);
+
+  const functionCall = /([a-z0-9]*)\(([0-9., ]*)\)(?!.*\()/i;
+  //this  call a function like sum(1,4)
+
+  // funct to split the arg based on , and call map() with
+  //parseFloat as argument
+  const toNumberList = (args) => args.split(",").map(parseFloat);
+
+  //funct with twa orgs (fn , args) that access
+  // the value (function) of spreadsheetFunction obj
+  //then call the function toNumbeList and pass
+  // args to split it
+  const apply = (fn, args) =>
+    spreasheetFunctions[fn.toLowerCase()](toNumberList(args));
+
+  return str2.replace(functionCall, (match, fn, args) =>
+    spreasheetFunctions.hasOwnProperty(fn) ? apply(fn, args) : match
+  );
 };
 
 const isEven = (num) => num % 2 === 0;
@@ -98,6 +157,7 @@ const range = (start, end) =>
 //3) the returning value of range would be numbers
 //so we need to convert those numbers back to string char
 //using map()
+
 const charRange = (start, end) =>
   range(start.charCodeAt(0), end.charCodeAt(0)).map((code) =>
     String.fromCharCode(code)
@@ -105,4 +165,59 @@ const charRange = (start, end) =>
 
 // to run spreadsheet functions, we need to
 //parse and evaluate the input string
-const evalFormula = (x, cells) => {};
+const evalFormula = (x, cells) => {
+  //find  value of the cell  whose id = id passed as param
+  const idToText = (id) => cells.find((cell) => cell.id === id).value;
+
+  //match cell ranges in a formula.
+  //Cell ranges look like A1: B12 or A3: A25
+  //match cell chars then match number
+  //[1 - 9] and optional [0-9]
+  // then :
+  // then the same patterns as the first part of colunm
+  const rangeRegex = /([A-J])([1-9][-0-9]?):([A-J])([1-9][0-9]?)/gi;
+
+  const rangeFromString = (num1, num2) => range(parseInt(num1), parseInt(num2));
+
+  //Use carrying (return fnc within fnc)
+  // process allows to create a variable
+  //that holdsa funct to be called later
+  //const innerOne = elemValue(1)
+  // const finalCall = innerOne("B")
+  const elemValue = (num) => {
+    const inner = (character) => {
+      return idToText(character + num);
+    };
+
+    return inner;
+  };
+  //funct reference is name of function
+  // passed as callback without ()
+  //so here we pass elemValue as callbak in map()
+  const addCharacters = (character1) => (character2) => (num) =>
+    charRange(character1, character2).map(elemValue(num));
+
+  //create function that replace regeEx with function
+  //as  rangeExt has 4capture groups, let callback
+  //should have param for each capture grp
+
+  // addCharacters return function that will be called later
+  //so we can chain two func calls immediately
+  const rangeExpanded = x.replace(
+    rangeRegex,
+    (_match, char1, num1, char2, num2) =>
+      rangeFromString(num1, nun2).map(addCharacters(char1)(char2))
+  );
+  const cellRegex = /[A-J][1-9][0-9]?/gi;
+  const cellExpanded = rangeExpanded.replace(cellRegex, (match) =>
+    idToText(match.toUpperCase())
+  );
+
+  // if functionExpanded matches x return it otherwise
+  // call recursively the function and pass functionexpanded
+  // and cells for next evaluation
+  const functionExpanded = applyFunction(cellExpanded);
+  return functionExpanded === x
+    ? functionExpanded
+    : evalFormula(functionExpanded, cells);
+};
