@@ -122,6 +122,17 @@ const spreasheetFunctions = {
   sum,
   average,
   median,
+  even: (nums) => nums.filter(isEven),
+  someeven: (nums) => nums.some(isEven),
+  everyeven: (nums) => nums.every(isEven),
+  firsttwo: (nums) => nums.slice(0, 2),
+  lasttwo: (nums) => nums.slice(-2),
+  has2: (nums) => nums.includes(2),
+  increment: (nums) => nums.map((num) => num + 1),
+  random: ([x, y]) => Math.floor(Math.random() * y + x),
+  range: (nums) => range(...nums),
+  nodupes: (nums) => [...new Set(nums).values()],
+  "": (n) => n,
 };
 
 // need tell the window.onload function
@@ -134,6 +145,15 @@ const update = (event) => {
   //should be used and spreadsheet function
   //should eveluated
   if (!value.includes(element.id) && value[0] === "=") {
+    //as value start with = that triggers the function
+    //we need to get the value starting from second to the end
+    //access the container children and pass them as 2nd param
+    //using Array.from() to convert container children (array-like)
+    // to proper array.
+    element.value = evalFormula(
+      value.slice(1),
+      document.getElementById("container").children
+    );
   }
 };
 
